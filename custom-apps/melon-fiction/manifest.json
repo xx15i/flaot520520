@@ -1,0 +1,20 @@
+{
+  "sdkVersion": "1.0",
+  "id": "melon.fiction",
+  "name": "吃瓜文学",
+  "version": "1.0.0",
+  "author": "Float 官方",
+  "description": "界面叙事文学生成器：选几位角色当主角，生成论坛体吃瓜帖或「捡到手机」聊天记录体故事。你是屏幕外的吃瓜群众——蹲后续、催更、插楼，看角色们的瓜越长越大。",
+  "icon": "icon.png",
+  "entry": "index.html",
+  "permissions": [
+    "app.data.read",
+    "app.data.write",
+    "characters.read",
+    "ai.generate",
+    "ui.toast"
+  ],
+  "resources": {
+    "presets": ["presets.json"]
+  }
+}
