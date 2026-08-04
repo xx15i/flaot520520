@@ -4360,3 +4360,223 @@
 .music-tabbar {
     background: rgba(12, 13, 18, 0.4);
 }
+
+/* ═══════════════════════════════════════════════════════
+   唱片回归最初的玻璃发光质感（保留居中修正，撤销深色唱盘）
+   ═══════════════════════════════════════════════════════ */
+
+.mp-lumen .music-player-vinyl-glow {
+    background: radial-gradient(circle, var(--c-music-gold) 0%, transparent 60%);
+}
+
+.mp-lumen .music-player-vinyl {
+    background: radial-gradient(circle,
+            var(--c-music-surface) 0%,
+            var(--c-music-glass-dim) 35%,
+            var(--c-music-glass-dim) 50%,
+            var(--c-music-glass-dim) 65%,
+            var(--c-music-surface) 100%);
+    box-shadow:
+        0 0 0 1px var(--c-music-accent-dim),
+        0 8px 32px var(--c-music-accent-dim),
+        inset 0 0 20px var(--c-music-surface-solid);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.mp-lumen .music-player-vinyl-groove {
+    border-color: var(--c-music-glass-dim);
+}
+
+.mp-lumen .music-player-vinyl-center {
+    background: var(--c-music-surface);
+    box-shadow: inset 0 0 10px var(--c-music-surface);
+}
+
+.mp-lumen .music-player-vinyl-dot {
+    background: var(--c-music-gold);
+    box-shadow: 0 0 4px var(--c-music-gold);
+}
+
+.mp-lumen .music-player-tonearm-pivot {
+    background: radial-gradient(circle at 40% 35%,
+        var(--c-music-surface-solid),
+        var(--c-music-gold) 60%,
+        var(--c-music-surface) 100%);
+    box-shadow:
+        0 0 0 2px var(--c-music-surface-solid),
+        0 2px 6px var(--c-music-accent-dim);
+}
+
+.mp-lumen .music-player-tonearm-pivot::after {
+    background: var(--c-music-surface-solid);
+}
+
+.mp-lumen .music-player-tonearm-arm {
+    background: linear-gradient(180deg,
+        var(--c-music-surface-solid) 0%,
+        var(--c-music-surface) 40%,
+        var(--c-music-bg-glow) 100%);
+    box-shadow: 0 1px 4px var(--c-music-accent-dim);
+}
+
+.mp-lumen .music-player-tonearm-head {
+    background: linear-gradient(180deg,
+        var(--c-music-surface) 0%,
+        var(--c-music-bg-glow) 100%);
+    box-shadow: 0 1px 3px var(--c-music-accent-dim);
+}
+
+.mp-lumen .music-player-tonearm-head::before {
+    background: linear-gradient(180deg,
+        var(--c-music-surface-solid),
+        var(--c-music-surface));
+    box-shadow: 0 1px 3px var(--c-music-accent-dim);
+}
+
+/* ═══════════════════════════════════════════════════════
+   聊天小窗回归原浅色配色 — 与App暗色主题解耦
+   ═══════════════════════════════════════════════════════ */
+
+.mini-app-window {
+    /* Scoped token overrides: the mini window hosts the light chat UI,
+       keep its chrome in the original light glass palette. */
+    --c-music-surface: rgba(255, 255, 255, 0.3);
+    --c-music-surface-solid: rgba(255, 255, 255, 0.55);
+    --c-music-accent: #5b7b64;
+    --c-music-accent-dim: rgba(106, 141, 115, 0.15);
+    --c-music-text: #2b3d31;
+    --c-music-overlay: rgba(0, 0, 0, 0.25);
+
+    background: rgba(255, 255, 255, 0.92);
+    border-radius: 12px;
+    border: 1px solid var(--c-music-surface-solid);
+    box-shadow: 0 6px 16px var(--c-music-accent-dim);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.mini-app-window .mini-app-titlebar {
+    background: rgba(245, 247, 244, 0.95);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.mini-app-window .mini-app-resize::after {
+    border-right-color: rgba(0, 0, 0, 0.25);
+    border-bottom-color: rgba(0, 0, 0, 0.25);
+}
+
+/* 播放条与Tab栏之间不再有分割线，视觉上为同一整块玻璃 */
+.music-now-bar + .music-tabbar {
+    border-top: none;
+}
+
+/* ═══════════════════════════════════════════════════════
+   底部区域合并为单块玻璃：一个容器做一次模糊，彻底消除接缝
+   ═══════════════════════════════════════════════════════ */
+
+.music-bottom-dock {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 40;
+    background: rgba(12, 13, 18, 0.4);
+    backdrop-filter: blur(28px) saturate(160%);
+    -webkit-backdrop-filter: blur(28px) saturate(160%);
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.music-bottom-dock .music-now-bar {
+    position: static;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+}
+
+.music-bottom-dock .music-tabbar {
+    position: static;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    border: none;
+}
+
+/* 播放页背景模式选择胶囊 */
+.music-bg-modes {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.music-bg-mode {
+    flex: 1;
+    border: 1px solid var(--c-music-surface-solid);
+    background: var(--c-music-surface);
+    color: var(--c-music-accent);
+    font-size: calc(10.8px*var(--app-text-scale,1));
+    font-family: inherit;
+    padding: 8px 4px;
+    border-radius: 999px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.music-bg-mode[data-on] {
+    background: var(--c-music-primary-dim);
+    border-color: rgba(255, 84, 104, 0.4);
+    color: var(--c-music-primary);
+    font-weight: 600;
+}
+
+/* 歌单收藏/评论胶囊为可点按钮 */
+.music-pl-chip {
+    cursor: pointer;
+    font-family: inherit;
+    transition: transform 0.15s;
+}
+
+.music-pl-chip:active:not(:disabled) {
+    transform: scale(0.96);
+}
+
+.music-pl-chip:disabled {
+    opacity: 0.6;
+}
+
+.music-pl-chip[data-on] {
+    color: var(--c-music-primary);
+    border-color: rgba(255, 84, 104, 0.4);
+    background: var(--c-music-primary-dim);
+}
+
+
+/* ═══════════════════════════════════════════════════════
+   默认背景改黑灰中性系 — 清除残留的蓝色调
+   ═══════════════════════════════════════════════════════ */
+
+.music-week-card {
+    background:
+        radial-gradient(220px 130px at 85% 0%, rgba(200, 203, 212, 0.1), transparent 70%),
+        linear-gradient(140deg, #1d1d22, #151517 70%);
+}
+
+.mcmt-page {
+    background-image: radial-gradient(360px 240px at 80% -10%, rgba(160, 162, 172, 0.09), transparent 70%);
+}
+
+.music-bottom-dock {
+    background: rgba(14, 14, 16, 0.4);
+}
+
+/* 去掉页面背景的胶片噪点纹理，保留纯净渐变（播放页不受影响） */
+.music-app {
+    background-image:
+        radial-gradient(circle at 10% 10%, var(--c-music-bg-mint) 0%, transparent 60%),
+        radial-gradient(circle at 90% 10%, var(--c-music-bg-cream) 0%, transparent 60%),
+        radial-gradient(circle at 85% 85%, var(--c-music-bg-lime) 0%, transparent 65%),
+        radial-gradient(circle at 10% 90%, var(--c-music-bg-mint-dim) 0%, transparent 60%),
+        radial-gradient(circle at 50% 50%, var(--c-music-bg-center) 0%, transparent 70%);
+}

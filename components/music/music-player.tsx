@@ -9,14 +9,14 @@ import { scrollElementWithinContainer } from "@/lib/dom-scroll";
 import { kvGet, kvSet } from "@/lib/kv-db";
 import { extractCoverPalette, DEFAULT_COVER_PALETTE, type CoverPalette } from "@/lib/cover-color";
 import {
-    getUserPlaylists, addTracksToPlaylist, removeTracksFromPlaylist, getNeteasePlayUrl,
+    getUserPlaylists, addTracksToPlaylist, removeTracksFromPlaylist, getNeteasePlayInfo,
     isNeteaseConfigured, recordTrackPlaylist, removeTrackPlaylistRecord, getTrackPlaylistId,
     getSongCommentPage, getNeteaseSongDetail,
     type NeteasePlaylist,
 } from "@/lib/music-service";
 import MusicCommentsPage from "./music-comments";
 import MusicArtistPage from "./music-artist";
-import { loadMusicBg, musicBgStyle, MUSIC_BG_EVENT, type MusicBgConfig } from "@/lib/music-bg";
+import { loadMusicBg, playerBgStyle, MUSIC_BG_EVENT, type MusicBgConfig } from "@/lib/music-bg";
 
 const PLAY_MODE_ICONS: Record<PlayMode, { svg: string; label: string }> = {
     sequence: {
@@ -89,7 +89,7 @@ export default function MusicPlayer() {
             }
             setBgCfg(prev => {
                 const fresh = loadMusicBg();
-                return prev.image === fresh.image && prev.dim === fresh.dim && prev.applyPlayer === fresh.applyPlayer ? prev : fresh;
+                return JSON.stringify(prev) === JSON.stringify(fresh) ? prev : fresh;
             });
         }, ms));
         return () => timers.forEach(clearTimeout);
@@ -372,12 +372,13 @@ export default function MusicPlayer() {
         if (target.id.startsWith("netease_")) {
             beginMusicLoadingToast(target.id);
             const nid = parseInt(target.id.replace("netease_", ""), 10);
-            const url = await getNeteasePlayUrl(nid);
-            if (!url) {
-                showMusicToast("加载失败，请稍后重试");
+            const info = await getNeteasePlayInfo(nid);
+            if (!info.url) {
+                showMusicToast(info.reason || "加载失败，请稍后重试", 2600);
                 return;
             }
-            player.playUrl(url, target);
+            player.playUrl(info.url, target);
+            if (info.trial) showMusicToast("VIP 歌曲，当前播放 30 秒试听", 2600);
             return;
         }
         player.playTrack(target);
@@ -408,7 +409,7 @@ export default function MusicPlayer() {
     const hasLyrics = parsedLyrics.current.length > 0;
     const modeInfo = PLAY_MODE_ICONS[player.playMode];
     const activeLyricText = activeLyricIdx >= 0 ? parsedLyrics.current[activeLyricIdx]?.text : "";
-    const customBg = bgCfg.applyPlayer ? musicBgStyle(bgCfg, 0.08) : undefined;
+    const customBg = playerBgStyle(bgCfg);
     const ambientVars = {
         "--mp-c1": palette[0],
         "--mp-c2": palette[1],
@@ -448,7 +449,7 @@ export default function MusicPlayer() {
             <div className="mp-top">
                 <button className="music-player-close" onClick={player.closeFullPlayer}>
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round">
-                        <path d="m6 9 6 6 6-6" />
+                        <path d="M15 19 8 12l7-7" />
                     </svg>
                 </button>
                 <div className="mp-titles">
