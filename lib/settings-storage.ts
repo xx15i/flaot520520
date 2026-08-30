@@ -226,6 +226,11 @@ function stripDeprecatedPresetFields(preset: PresetConfig & { fold_tags?: unknow
         frequency_penalty: round2(rest.frequency_penalty),
         presence_penalty: round2(rest.presence_penalty),
         prompts: rest.prompts.map(({ injection_order: _injectionOrder, ...prompt }) => normalizePresetPromptScope(prompt)),
+        // 老数据里可能只有 prompts 没有 prompt_order（早期新建/导入的预设）。
+        // 这里按数组顺序补齐：界面和组装器从此读的是同一份顺序表。
+        prompt_order: rest.prompt_order?.length
+            ? rest.prompt_order
+            : rest.prompts.map(p => ({ identifier: p.identifier, enabled: p.enabled })),
     };
 }
 
@@ -248,11 +253,15 @@ function normalizePresetPromptScope(prompt: Prompt): Prompt {
 export function savePresets(presets: PresetConfig[]): void {
     if (typeof window === "undefined") return;
     writePresetsCache(presets.map(stripDeprecatedPresetFields));
+    // 统一变更通知：预设管理器直接编辑保存此前不发事件，挂载中的聊天页（流式预览
+    // 标签配置等）拿不到新配置，最终清洗按新预设、预览按旧预设。监听方刷新是幂等的。
+    window.dispatchEvent(new CustomEvent("settings-presets-updated"));
 }
 
 export async function savePresetsAsync(presets: PresetConfig[]): Promise<void> {
     if (typeof window === "undefined") return;
     await writePresetsCacheAsync(presets.map(stripDeprecatedPresetFields));
+    window.dispatchEvent(new CustomEvent("settings-presets-updated"));
 }
 
 export async function ensureSettingsStorageHydrated(): Promise<void> {
@@ -276,7 +285,9 @@ export function createPreset(name: string): PresetConfig {
         openai_max_tokens: 0,
         openai_max_context: 100000,
         story_summary_tag: "summary",
-        prompts: []
+        prompts: [],
+        // 新建预设从第一天起就带上顺序表，避免出现「有条目但没有 order」的中间态
+        prompt_order: [],
     };
 }
 
@@ -316,6 +327,14 @@ export function parsePresetFromJson(text: string, fallbackName: string = "导入
         if (typeof obj.scenario_format === "string") preset.scenario_format = obj.scenario_format;
         if (typeof obj.personality_format === "string") preset.personality_format = obj.personality_format;
         if (typeof obj.story_summary_tag === "string") preset.story_summary_tag = obj.story_summary_tag;
+        // 思维链标签解析与剔除文本（导出走整对象展开，导入这里必须逐项接住，否则配置静默丢失）
+        if (typeof obj.thinking_tag === "string") preset.thinking_tag = obj.thinking_tag;
+        if (typeof obj.online_thinking_tag === "string") preset.online_thinking_tag = obj.online_thinking_tag;
+        if (typeof obj.online_thinking_enabled === "boolean") preset.online_thinking_enabled = obj.online_thinking_enabled;
+        if (typeof obj.offline_thinking_enabled === "boolean") preset.offline_thinking_enabled = obj.offline_thinking_enabled;
+        if (Array.isArray(obj.strip_texts)) {
+            preset.strip_texts = obj.strip_texts.filter((item: unknown): item is string => typeof item === "string");
+        }
 
         // Parse prompts if array
         if (Array.isArray(obj.prompts)) {
@@ -351,6 +370,12 @@ export function parsePresetFromJson(text: string, fallbackName: string = "导入
                     };
                 });
             }
+        }
+
+        // 导入的 JSON 没带顺序表时，按 prompts 数组顺序补一份，
+        // 保证界面看到的顺序和组装时用的顺序永远是同一份。
+        if (!preset.prompt_order?.length && preset.prompts.length > 0) {
+            preset.prompt_order = preset.prompts.map(p => ({ identifier: p.identifier, enabled: p.enabled }));
         }
 
         return preset;
@@ -756,6 +781,38 @@ export function saveBindingConfig(config: BindingConfig, notify: boolean = true)
     if (typeof window === "undefined") return;
     kvSet(BINDINGS_KEY, JSON.stringify(config));
     if (notify) window.dispatchEvent(new CustomEvent("settings-bindings-updated"));
+}
+
+/**
+ * 全局默认绑定「所见即所得」：API 配置 / 预设 / 用户身份三项不再有"未设置"态。
+ * 未设置（或指向已删除对象）时，把实际兜底值写进存储——API=第一个配置、
+ * 预设=内置预设、身份=列表第一条——让绑定界面显示的就是实际生效的，
+ * 消灭"没绑却悄悄用了第一个"的静默兜底（多身份用户曾因此身份错乱进记忆）。
+ * 列表为空的项保持缺省。应用启动和绑定界面加载时各跑一次即可，不在热路径调用。
+ */
+export function ensureGlobalBindingDefaults(): void {
+    if (typeof window === "undefined") return;
+    const config = loadBindingConfig();
+    const global = config.globalDefaults;
+    let changed = false;
+
+    const apiConfigs = loadApiConfigs();
+    if (apiConfigs.length > 0 && !apiConfigs.some(c => c.id === global.apiConfigId)) {
+        global.apiConfigId = apiConfigs[0].id;
+        changed = true;
+    }
+    const presets = loadPresets();
+    if (presets.length > 0 && !presets.some(p => p.id === global.presetId)) {
+        global.presetId = (presets.find(p => p.builtIn) ?? presets[0]).id;
+        changed = true;
+    }
+    const identities = loadUserIdentities();
+    if (identities.length > 0 && !identities.some(i => i.id === global.userIdentityId)) {
+        global.userIdentityId = identities[0].id;
+        changed = true;
+    }
+
+    if (changed) saveBindingConfig(config);
 }
 
 /**

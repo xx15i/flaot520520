@@ -82,6 +82,19 @@ export type PresetConfig = SettingItemMeta & {
     scenario_format?: string;
     personality_format?: string;
     story_summary_tag?: string;
+    /** 线下/剧情模式的思维链标签名：从模型输出的 XML 里提取思考过程（默认 thinking，兼容 thought）。
+     *  仅当 offline_thinking_enabled 开启时才启用标签解析；关闭时走模型原生 reasoning。 */
+    thinking_tag?: string;
+    /** 线上模式的思维链标签名：从模型输出的 XML 里提取思考过程（默认 thinking）。
+     *  仅当 online_thinking_enabled 开启时才启用标签解析；关闭时走模型原生 reasoning。 */
+    online_thinking_tag?: string;
+    /** 线上模式是否启用思维链标签解析（默认关；关 = 走模型原生 reasoning） */
+    online_thinking_enabled?: boolean;
+    /** 线下模式是否启用思维链标签解析（默认关；关 = 走模型原生 reasoning） */
+    offline_thinking_enabled?: boolean;
+    /** 模型回复中直接剔除的文本片段列表（字面量删除，不走正则）：如 <思考结束> 等残留标签，
+     *  生成时即删除，不进入消息、不进入发给模型的记录。 */
+    strip_texts?: string[];
     prompt_order?: PromptOrderEntry[];
     prompts: Prompt[];
 };
@@ -101,6 +114,7 @@ export type RegexRule = {
     markdownOnly?: boolean;       // true → only apply during display rendering (non-destructive)
     promptOnly?: boolean;         // true → only apply during prompt assembly (non-destructive)
     runOnEdit?: boolean;          // true → also apply when user edits an existing message
+    historyOnly?: boolean;        // true → only apply to chat history message blocks, never to system prompts/preset/world book
     substituteRegex?: number;     // 0=NONE, 1=RAW macro substitution in findRegex, 2=ESCAPED
     minDepth?: number;            // Minimum message depth (-1 = unlimited)
     maxDepth?: number;            // Maximum message depth
@@ -137,6 +151,10 @@ export type VoiceApiConfig = {
     sttModel?: string;
     defaultVoice: string;
     languageBoost?: string;
+    /** Minimax voice_setting.speed. Missing values keep the legacy 1.0x behavior. */
+    speechSpeed?: number;
+    /** Minimax voice_setting.pitch（半音，±12）。缺省保持旧行为（0，原声）。 */
+    speechPitch?: number;
     customVoices?: { id: string; name: string; createdAt?: number }[];
     enableSTT: boolean;
     enableTTS: boolean;
@@ -325,6 +343,8 @@ export type McpServerConfig = {
     description?: string;
     url: string;
     enabled: boolean;
+    /** 直连模式：浏览器直接请求（本机/内网 MCP 用），不走服务端代理 */
+    directFetch?: boolean;
     headers?: Record<string, string>;
     discoveredTools?: McpDiscoveredTool[];
     // Session state (runtime, not persisted across page refresh)
